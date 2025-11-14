@@ -30,8 +30,8 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${SUPPORTED_WARN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
-set_optional_cxx_flag(SUPPORTED_WERROR_CXX_FLAGS "-Werror")
-set(CMAKE_CXX_FLAGS_DEBUG "${SUPPORTED_WERROR_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+# set_optional_cxx_flag(SUPPORTED_WERROR_CXX_FLAGS "-Werror")
+# set(CMAKE_CXX_FLAGS_DEBUG "${SUPPORTED_WERROR_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 
 include(CheckCCompilerFlag)
 
@@ -58,8 +58,8 @@ set_optional_c_flag(SUPPORTED_WARN_C_FLAGS "--display_error_number")  # Show PGI
 
 set(CMAKE_C_FLAGS "${SUPPORTED_WARN_C_FLAGS} ${CMAKE_C_FLAGS}")
 
-set_optional_c_flag(SUPPORTED_WERROR_C_FLAGS "-Werror")
-set(CMAKE_C_FLAGS_DEBUG "${SUPPORTED_WERROR_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+# set_optional_c_flag(SUPPORTED_WERROR_C_FLAGS "-Werror")
+# set(CMAKE_C_FLAGS_DEBUG "${SUPPORTED_WERROR_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
 
 if (OCCA_ENABLE_FORTRAN)
   include(CheckFortranCompilerFlag)
@@ -80,9 +80,9 @@ if (OCCA_ENABLE_FORTRAN)
   set_optional_fortran_flag(SUPPORTED_WARN_Fortran_FLAGS "-warn all")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${SUPPORTED_WARN_Fortran_FLAGS}")
 
-  set_optional_fortran_flag(SUPPORTED_WERROR_Fortran_FLAGS "-Werror")
-  set_optional_fortran_flag(SUPPORTED_WERROR_Fortran_FLAGS "-warn errors")
-  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${SUPPORTED_WERROR_Fortran_FLAGS}")
+  # set_optional_fortran_flag(SUPPORTED_WERROR_Fortran_FLAGS "-Werror")
+  # set_optional_fortran_flag(SUPPORTED_WERROR_Fortran_FLAGS "-warn errors")
+  # set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${SUPPORTED_WERROR_Fortran_FLAGS}")
 
   set_optional_fortran_flag(SUPPORTED_WNO_INTEGER_DIVISION_Fortran_FLAGS "-Wno-integer-division")
 
