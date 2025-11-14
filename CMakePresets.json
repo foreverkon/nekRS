@@ -8,8 +8,8 @@
     "configurePresets": [
         {
             "name": "default",
-            "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_STANDARD": "20",
@@ -17,23 +17,58 @@
                 "CMAKE_CXX_COMPILER": "mpicxx",
                 "CMAKE_Fortran_COMPILER": "mpif77"
             }
+        },
+        {
+            "name": "debug",
+            "inherits": ["default"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g3 -Wall -Wextra"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": ["default"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -march=native -DNDEBUG"
+            }
+        },
+        {
+            "name": "relwithdebinfo",
+            "inherits": ["default"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -march=native -DNDEBUG"
+            }
         }
     ],
     "buildPresets": [
         {
-            "name": "debug",
+            "name": "base",
+            "hidden": true,
+            "jobs": 8,
+            "targets": ["nekrs-bin"]
+        },
+        {
+            "name": "default",
             "configurePreset": "default",
-            "configuration": "Debug"
+            "inherits": ["base"]
+        },
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "inherits": ["base"]
         },
         {
             "name": "release",
-            "configurePreset": "default",
-            "configuration": "Release"
+            "configurePreset": "release",
+            "inherits": ["base"]
         },
         {
             "name": "relwithdebinfo",
-            "configurePreset": "default",
-            "configuration": "RelWithDebInfo"
+            "configurePreset": "relwithdebinfo",
+            "inherits": ["base"]
         }
     ]
 }
