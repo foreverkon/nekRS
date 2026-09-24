@@ -68,15 +68,15 @@ int main(int argc, char** argv)
   const auto timeStart = std::chrono::high_resolution_clock::now();
 
   if (const char* env_val = std::getenv("NEKRS_SIGNUM_BACKTRACE")) {
-    std::signal(std::atoi(env_val), signalHandlerBacktrace);  
+    std::signal(std::atoi(env_val), signalHandlerBacktrace);
   }
 
   if (const char* env_val = std::getenv("NEKRS_SIGNUM_TERM")) {
-    std::signal(std::atoi(env_val), signalHandlerLastStep);  
+    std::signal(std::atoi(env_val), signalHandlerLastStep);
   }
 
   if (const char* env_val = std::getenv("NEKRS_SIGNUM_UPD")) {
-    std::signal(std::atoi(env_val), signalHandlerUpdateFile);  
+    std::signal(std::atoi(env_val), signalHandlerUpdateFile);
   }
 
   {
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  const double time0 = MPI_Wtime(); 
+  const double time0 = MPI_Wtime();
 
   MPI_Comm commGlobal;
   MPI_Comm_dup(MPI_COMM_WORLD, &commGlobal);
@@ -132,23 +132,23 @@ int main(int argc, char** argv)
       sigemptyset(&signalSet);
       sigaddset(&signalSet, SIGCONT);
       int signal;
-      sigwait(&signalSet, &signal); 
+      sigwait(&signalSet, &signal);
     }
 
-    MPI_Barrier(comm); // block until signal on rank0 is received 
+    MPI_Barrier(comm); // block until signal on rank0 is received
   }
 
   auto abort = [&](const std::string& txt)
   {
-    if (cmdOpt->debug) throw; 
+    if (cmdOpt->debug) throw;
 
     if (!txt.empty()) {
       std::cerr << txt << std::endl;
       MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE); // terminates all processes
-     
+
     } else {
       MPI_Barrier(MPI_COMM_WORLD); // waiting to be terminated
-    } 
+    }
   };
 
   try {
@@ -197,29 +197,29 @@ int main(int argc, char** argv)
       int retVal;
       MPI_Comm_compare(commGlobal, comm, &retVal);
       return (retVal == MPI_IDENT) ? false : true;
-    }(); 
+    }();
 
-    nekrs::setup(commGlobal, 
-                 comm, 
-      	         cmdOpt->buildOnly, 
+    nekrs::setup(commGlobal,
+                 comm,
+      	         cmdOpt->buildOnly,
                  cmdOpt->sizeTarget,
-                 cmdOpt->ciMode, 
+                 cmdOpt->ciMode,
                  parKeyValuePairs,
                  cmdOpt->setupFile,
-                 cmdOpt->backend, 
+                 cmdOpt->backend,
                  cmdOpt->deviceID,
-                 cmdOpt->nSessions, 
+                 cmdOpt->nSessions,
                  cmdOpt->sessionID,
                  cmdOpt->debug);
- 
+
     if (cmdOpt->buildOnly) {
       nekrs::finalize();
       MPI_Finalize();
       return EXIT_SUCCESS;
     }
- 
+
     double time = nekrs::startTime();
- 
+
     double elapsedTime = 0;
     {
       MPI_Barrier(comm);
@@ -230,16 +230,16 @@ int main(int argc, char** argv)
       if (rank == 0)
         std::cout << "initialization took " << elapsedTime << " s" << std::endl;
     }
- 
+
     int tStep = 0;
     int isLastStep = 0;
     nekrs::lastStep(isLastStep);
- 
+
     nekrs::udfExecuteStep(time, tStep, /* checkpointStep */ 0);
     nekrs::resetTimer("udfExecuteStep");
- 
+
     double elapsedStepSum = 0;
- 
+
     double tSolveStepMin = std::numeric_limits<double>::max();
     double tSolveStepMax = std::numeric_limits<double>::min();
 
@@ -249,7 +249,7 @@ int main(int argc, char** argv)
       if (rank == 0) std::cout << "\ntimestepping for " << nekrs::numSteps() << " steps ...\n";
     } else {
       isLastStep = 1;
-      if (rank == 0) std::cout << "endTime or numSteps reached already -> skip timestepping\n"; 
+      if (rank == 0) std::cout << "endTime or numSteps reached already -> skip timestepping\n";
     }
 
     if (rank == 0) std::cout << std::endl;
@@ -259,16 +259,16 @@ int main(int argc, char** argv)
     while (!isLastStep) {
       MPI_Barrier(comm);
       const double timeStartStep = MPI_Wtime();
- 
+
       ++tStep;
       auto [dtSubStep, dt] = nekrs::dt(tStep);
 
       const double timeNew = time + dt;
- 
+
       isLastStep = nekrs::lastStep(timeNew, tStep, elapsedTime);
       if (sig_terminate) isLastStep = 1;
 
-      if (isLastStep && nekrs::endTime() > 0) {
+      if (isLastStep && nekrs::endTime() > 0 && sig_terminate == 0) {
         dtSubStep = nekrs::finalTimeStepSize(time);
       }
 
@@ -278,7 +278,7 @@ int main(int argc, char** argv)
       if (nekrs::writeInterval() < 0) checkpointStep = 0;
       nekrs::checkpointStep(checkpointStep);
 
-      // all sessions run the same number of global steps 
+      // all sessions run the same number of global steps
       // but some may do sub-stepping
       {
         nekrs::initStep(time, dtSubStep, tStep);
@@ -298,21 +298,21 @@ int main(int argc, char** argv)
         sig_processUpdFile = 0;
       }
 
-      // print solver stats only 
+      // print solver stats only
       if (nekrs::printStepInfoFreq()) {
         if (tStep % nekrs::printStepInfoFreq() == 0)
           nekrs::printStepInfo(timeNew, tStep, false, true);
       }
- 
+
       if (checkpointStep) nekrs::writeCheckpoint(timeNew);
- 
+
       MPI_Barrier(comm);
       const double elapsedStep = MPI_Wtime() - timeStartStep;
       tSolveStepMin = std::min(elapsedStep, tSolveStepMin);
       tSolveStepMax = std::max(elapsedStep, tSolveStepMax);
       nekrs::updateTimer("minSolveStep", tSolveStepMin);
       nekrs::updateTimer("maxSolveStep", tSolveStepMax);
- 
+
       elapsedStepSum += elapsedStep;
       elapsedTime += elapsedStep;
       nekrs::updateTimer("elapsedStep", elapsedStep);
@@ -322,16 +322,16 @@ int main(int argc, char** argv)
       if (nekrs::printStepInfoFreq()) {
         if (tStep % nekrs::printStepInfoFreq() == 0) {
           nekrs::printStepInfo(timeNew, tStep, true, false);
-          if (rank == 0) std::cout << "::" << std::endl; 
+          if (rank == 0) std::cout << "::" << std::endl;
         }
       }
- 
+
       if(nekrs::runTimeStatFreq()) {
         if (tStep % nekrs::runTimeStatFreq() == 0 || isLastStep) {
           nekrs::printRuntimeStatistics(tStep);
         }
       }
- 
+
       time = timeNew;
 
       if (tStep % 100 == 0) fflush(stdout);
@@ -353,8 +353,8 @@ int main(int argc, char** argv)
 #ifdef CPPTRACE_ENABLED
   catch (const cpptrace::exception& e)
   {
-    const auto msg = "Aborting in " 
-                     + e.trace().frames.begin()->filename 
+    const auto msg = "Aborting in "
+                     + e.trace().frames.begin()->filename
                      + ":" + std::string(e.trace().frames.begin()->symbol) + "\n"
                      + e.message();
     abort(!std::string(e.message()).empty() ? msg : std::string(""));

@@ -12,3 +12,5 @@ logfile
 *.dat
 .cache/
 3rd_party/plugins/
+doxygen/
+install/
