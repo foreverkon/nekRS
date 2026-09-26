@@ -48,11 +48,7 @@ void iofldAdios::openEngine()
       fileNameBase += extension;
     }
     adiosIO.DefineAttribute<uint32_t>("dimension", static_cast<uint32_t>(mesh_vis->dim));
-    if (getStepCounter() < 1) {
-      adiosEngine = adiosIO.Open(fileNameBase, adios2::Mode::Write);
-    } else {
-      adiosEngine = adiosIO.Open(fileNameBase, adios2::Mode::Append);
-    }
+    adiosEngine = adiosIO.Open(fileNameBase, adios2::Mode::Append);
   } else {
     if (platform->comm.mpiRank() == 0) {
       std::cout << "reading checkpoint ..." << std::endl;
@@ -233,7 +229,7 @@ template <typename OutputType> size_t iofldAdios::write_()
   adiosEngine.BeginStep();
 
   // connectivity + mesh coordinates
-  if (getStepCounter() == 0 || platform->options.compareArgs("MOVING MESH", "TRUE")) {
+  if (adiosEngine.CurrentStep() == 0 || platform->options.compareArgs("MOVING MESH", "TRUE")) {
     auto adiosMode = adios2::Mode::Sync; // avoid dangling pointer due to potential memPool resize
 
     putVariable<uint32_t>("types", VTK_CELL_TYPE, adiosMode);
@@ -325,7 +321,7 @@ template <typename OutputType> size_t iofldAdios::write_()
     putVariable(name, std::get<1>(entry));
   }
 
-  if (getStepCounter() == 0) {
+  if (adiosEngine.CurrentStep() == 0) {
     adiosIO.DefineAttribute<std::string>("vtk.xml", vtkSchema());
   }
 
